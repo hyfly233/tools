@@ -8,15 +8,13 @@ import com.example.demo.processor.PlanJsonProcessor;
 import com.example.demo.processor.ProcessActuator;
 import com.example.demo.processor.TestProcessor;
 import org.apache.commons.exec.CommandLine;
+import org.apache.commons.exec.DefaultExecuteResultHandler;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.PumpStreamHandler;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -156,29 +154,49 @@ class CommandTests {
 
         CommandLine cmdLine = new CommandLine("bash");
         cmdLine.addArgument("-c");
-//        cmdLine.addArgument("ls -l", false);
-//        cmdLine.addArgument("ls -l | grep log", false);
-        cmdLine.addArgument("terraform init && terraform plan -no-color -out=./tfplan -json -var-file=./values.tfvars.json", false);
+        cmdLine.addArgument("terraform plan -no-color -out=./tfplan -json -var-file=./values.tfvars.json && terraform show -no-color -json ./tfplan", false);
 
-        // 创建默认执行器
-        DefaultExecutor executor = new DefaultExecutor();
-
-        // 创建输出流
+        // 创建执行器，在输出流中打印输出并带有前缀
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        PumpStreamHandler streamHandler = new PumpStreamHandler(outputStream);
+        ByteArrayOutputStream errorStream = new ByteArrayOutputStream();
+        PumpStreamHandler streamHandler = new PumpStreamHandler(outputStream, errorStream);
 
-        // 将输出流关联到执行器
-        executor.setStreamHandler(streamHandler);
+        DefaultExecutor executor = new DefaultExecutor();
         executor.setWorkingDirectory(workspace);
+        executor.setStreamHandler(streamHandler);
+
+        DefaultExecuteResultHandler resultHandler = new DefaultExecuteResultHandler();
 
         // 执行命令
-        int exitCode = executor.execute(cmdLine);
+        executor.execute(cmdLine, resultHandler);
 
-        // 获取命令输出
-        String commandOutput = outputStream.toString();
+        resultHandler.waitFor();
 
-        // 打印输出和退出码
-        System.out.println("Command Output: \n" + commandOutput);
-        System.out.println("Exit Code: " + exitCode);
+        TestProcessor processor = new TestProcessor();
+        try (var reader = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(outputStream.toByteArray())))) {
+            String line;
+
+            while ((line = reader.readLine()) != null) {
+//                System.out.println("ok -> " + line);
+                processor.parse(line);
+            }
+        }
+
+        try (var reader = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(errorStream.toByteArray())))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+//                System.out.println("err -> " + line);
+                processor.parseError(line);
+            }
+        }
+
+        if (processor.isHasErr()) {
+            System.out.println(processor.getErrMsg());
+        }
+
+        if (processor.isCompleted()) {
+            System.out.println(processor.getPlanJson());
+            System.out.println(processor.getChangeSummary());
+        }
     }
 }
