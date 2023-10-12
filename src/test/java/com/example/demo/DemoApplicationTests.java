@@ -1,12 +1,12 @@
 package com.example.demo;
 
+import cn.hutool.core.util.RuntimeUtil;
 import com.example.demo.client.TerraformClient;
 import com.example.demo.client.TerraformOptions;
 import com.example.demo.entity.message.ChangeSummary;
 import com.example.demo.processor.PlanJsonProcessor;
 import com.example.demo.processor.ProcessActuator;
 import com.example.demo.processor.TestProcessor;
-import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -16,8 +16,6 @@ import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 @SpringBootTest
 class DemoApplicationTests {
@@ -54,33 +52,8 @@ class DemoApplicationTests {
         }
     }
 
-
     @Test
-    public void testC() {
-        LinkedList<CompletableFuture<Void>> futureList = new LinkedList<>();
-
-        // 添加CompletableFuture到列表中
-        futureList.add(CompletableFuture.runAsync(() -> System.out.println("Task 1")));
-        futureList.add(CompletableFuture.runAsync(() -> System.out.println("Task 2")));
-        futureList.add(CompletableFuture.runAsync(() -> System.out.println("Task 3")));
-
-        // 串行调用CompletableFutures
-        CompletableFuture<Void> finalFuture = CompletableFuture.completedFuture(null);
-
-        for (CompletableFuture<Void> future : futureList) {
-            finalFuture = finalFuture.thenCompose((v) -> future);
-        }
-
-        // 等待所有任务完成
-        try {
-            finalFuture.get();
-        } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
-        }
-    }
-
-    @Test
-    void test1() throws Exception {
+    void test01() throws Exception {
         var processBuilder = new ProcessBuilder();
 
 //        processBuilder.command("terraform", "plan", "-no-color", "-out=./tfplan", "-json", "&&", "terraform", "show", "-no-color", "-json", "./tfplan");
@@ -110,10 +83,14 @@ class DemoApplicationTests {
     }
 
     @Test
-    void test2() throws Exception {
+    void test02() throws Exception {
         var processBuilder = new ProcessBuilder();
 
-        processBuilder.command("terraform", "plan", "-no-color", "-out=./tfplan", "-json", "-var-file=./values.tfvars.json");
+//        processBuilder.command("terraform", "init", "&&", "terraform", "plan");
+//        processBuilder.command("terraform", "init", "&&", "terraform", "plan", "-no-color", "-out=./tfplan", "-json", "-var-file=./values.tfvars.json");
+//        processBuilder.command("terraform", "plan", "-no-color", "-out=./tfplan", "-json", "-var-file=./values.tfvars.json");
+//        processBuilder.command("bash", "-c", "ls -l | grep log");
+        processBuilder.command("bash", "-c", "terraform init && terraform plan -no-color -out=./tfplan -json -var-file=./values.tfvars.json");
 
         processBuilder.directory(new File("./tmp"));
 
@@ -132,115 +109,19 @@ class DemoApplicationTests {
                 planJsonProcessor.parsePlanJson(line);
             }
         }
+
+        try (var reader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                System.out.println(line);
+            }
+        }
+        process.waitFor();
         System.out.println("\n=======================\n");
     }
 
     @Test
-    void test3() throws Exception {
-
-        LinkedList<ProcessBuilder> processBuilderList = new LinkedList<>();
-
-        var processBuilder1 = new ProcessBuilder();
-        processBuilder1.command("terraform", "init", "-no-color");
-        processBuilder1.directory(new File("./tmp"));
-
-        var processBuilder2 = new ProcessBuilder();
-        processBuilder2.command("terraform", "plan", "-no-color", "-out=./tfplan", "-json", "-var-file=./values.tfvars.json");
-        processBuilder2.directory(new File("./tmp"));
-
-        var processBuilder3 = new ProcessBuilder();
-        processBuilder3.command("terraform", "show", "-no-color", "-json", "./tfplan");
-        processBuilder3.directory(new File("./tmp"));
-
-//        processBuilderList.add(processBuilder1);
-        processBuilderList.add(processBuilder2);
-        processBuilderList.add(processBuilder3);
-
-        // 串行调用
-        var planJsonProcessor = new PlanJsonProcessor();
-        for (int i = 0; i < processBuilderList.size(); i++) {
-            ProcessBuilder builder = processBuilderList.get(i);
-            var process = builder.start();
-            System.out.println("\n=========== index: " + i + "============\n");
-            try (var reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-
-                String line;
-
-                while ((line = reader.readLine()) != null) {
-                    if (StringUtils.isNotBlank(line)) {
-//                        System.out.println(line);
-                        planJsonProcessor.parsePlanJson(line);
-                    }
-                }
-            }
-
-            process.waitFor();
-
-//            System.out.println("index : " + i + " error -> " + planJsonProcessor.getErrorBuilder().toString());
-
-        }
-        if (planJsonProcessor.isSuccessful() && planJsonProcessor.isCompleted()) {
-            System.out.println(planJsonProcessor.getPlanJson());
-            System.out.println(planJsonProcessor.getChangeSummary());
-        }
-    }
-
-    @Test
-    void test4() throws Exception {
-
-        LinkedList<ProcessBuilder> processBuilderList = new LinkedList<>();
-
-        var processBuilder1 = new ProcessBuilder();
-        processBuilder1.command("terraform", "init", "-no-color");
-        processBuilder1.directory(new File("./tmp"));
-
-        var processBuilder2 = new ProcessBuilder();
-        processBuilder2.command("terraform", "plan", "-no-color", "-out=./tfplan", "-json", "-var-file=./values.tfvars.json");
-        processBuilder2.directory(new File("./tmp"));
-
-        var processBuilder3 = new ProcessBuilder();
-        processBuilder3.command("terraform", "show", "-no-color", "-json", "./tfplan");
-        processBuilder3.directory(new File("./tmp"));
-
-        processBuilderList.add(processBuilder1);
-        processBuilderList.add(processBuilder2);
-        processBuilderList.add(processBuilder3);
-
-        // 串行调用
-        var planJsonProcessor = new TestProcessor();
-        for (int i = 0; i < processBuilderList.size(); i++) {
-            ProcessBuilder builder = processBuilderList.get(i);
-            var process = builder.start();
-            System.out.println("\n=========== index: " + i + "============\n");
-            try (var reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-
-                String line;
-
-                while ((line = reader.readLine()) != null) {
-                    if (StringUtils.isNotBlank(line)) {
-//                        System.out.println(line);
-                        planJsonProcessor.parse(line);
-                    }
-                }
-            }
-
-            process.waitFor();
-
-//            System.out.println("index : " + i + " error -> " + planJsonProcessor.getErrorBuilder().toString());
-
-        }
-        if (planJsonProcessor.isHasErr()) {
-            System.out.println(planJsonProcessor.getErrMsg());
-        }
-
-        if (!planJsonProcessor.isHasErr() && planJsonProcessor.isCompleted()) {
-            System.out.println(planJsonProcessor.getPlanJson());
-            System.out.println(planJsonProcessor.getChangeSummary());
-        }
-    }
-
-    @Test
-    void Test05() throws Exception {
+    void Test03() throws Exception {
 
         final List<String> command01 = Arrays.asList("terraform", "init", "-no-color");
         final List<String> command02 = Arrays.asList("terraform", "plan", "-no-color", "-out=./tfplan", "-json", "-var-file=./values.tfvars.json");
@@ -263,5 +144,33 @@ class DemoApplicationTests {
             System.out.println(processor.getChangeSummary());
         }
 
+    }
+
+    @Test
+    void HutoolTest() throws Exception {
+        File workspace = new File("./tmp");
+
+        String command = "ls -l | grep log";
+//        String command = "terraform init";
+//        String command = "terraform init && terraform plan -no-color -out=./tfplan -json -var-file=./values.tfvars.json";
+        Process process = RuntimeUtil.exec(null, workspace, command);
+
+        try (var reader = new BufferedReader(
+                new InputStreamReader(process.getInputStream()))) {
+
+            String line;
+
+            while ((line = reader.readLine()) != null) {
+                System.out.println("ok -> " + line);
+            }
+        }
+
+        try (var reader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                System.out.println("err -> " + line);
+            }
+        }
+        process.waitFor();
     }
 }

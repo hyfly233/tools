@@ -161,7 +161,6 @@ public class TerraformClient implements AutoCloseable {
     public CompletableFuture<Boolean> planJson() throws IOException {
         this.checkRunningParameters();
         return this.run(INIT_COMMAND, PLAN_JSON_2_FILE_COMMAND, SHOW_FILE_PLAN_COMMAND);
-//        return this.run(PLAN_JSON_2_FILE_COMMAND);
     }
 
     private CompletableFuture<Boolean> run(String... commands) throws IOException {
