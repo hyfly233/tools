@@ -45,14 +45,6 @@ final class ProcessLauncher {
         this.builder.directory(directory);
     }
 
-    void setStartTask(Runnable startTask) {
-        this.startTask = startTask;
-    }
-
-    void setEndTask(Runnable endTask) {
-        this.endTask = endTask;
-    }
-
     void appendCommands(String... commands) {
         if (commands != null) {
             Stream<String> filteredCommands = Arrays.stream(commands).filter(c -> c != null && c.length() > 0);
@@ -88,14 +80,10 @@ final class ProcessLauncher {
         }
         if (!this.inheritIO) {
             if (this.outputListener != null) {
-                this.startTask.run();
                 this.executor.submit(() -> this.readProcessStream(this.process.getInputStream(), this.outputListener));
-                this.endTask.run();
             }
             if (this.errorListener != null) {
-                this.startTask.run();
                 this.executor.submit(() -> this.readProcessStream(this.process.getErrorStream(), this.errorListener));
-                this.endTask.run();
             }
         }
         return CompletableFuture.supplyAsync(() -> {
