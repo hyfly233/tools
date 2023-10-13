@@ -38,12 +38,14 @@ public class ProcessActuator {
             try (var reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
+                    System.out.println("ok -> " + line);
                     t.parse(line);
                 }
             }
             try (var reader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
+                    System.out.println("err -> "+ line);
                     t.parseError(line);
                 }
             }

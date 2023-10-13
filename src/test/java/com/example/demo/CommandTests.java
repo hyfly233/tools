@@ -13,6 +13,7 @@ import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.PumpStreamHandler;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.core.io.ClassPathResource;
 
 import java.io.*;
 import java.util.Arrays;
@@ -63,7 +64,10 @@ class CommandTests {
 //        processBuilder.command("terraform", "init", "&&", "terraform", "plan", "-no-color", "-out=./tfplan", "-json", "-var-file=./values.tfvars.json");
 //        processBuilder.command("terraform", "plan", "-no-color", "-out=./tfplan", "-json", "-var-file=./values.tfvars.json");
 //        processBuilder.command("bash", "-c", "ls -l | grep log");
-        processBuilder.command("bash", "-c", "terraform init && terraform plan -no-color -out=./tfplan -json -var-file=./values.tfvars.json");
+//        processBuilder.command("bash", "-c", "terraform init && terraform plan -no-color -out=./tfplan -json -var-file=./values.tfvars.json");
+
+        final List<String> command01 = Arrays.asList("terraform", "init", "-no-color", "-plugin-dir=./Users/flyhy/workspace/demo/tools/build/resources/main/huaweicloud");
+        processBuilder.command(command01);
 
         processBuilder.directory(new File("./tmp"));
 
@@ -96,7 +100,11 @@ class CommandTests {
     @Test
     void Test03() throws Exception {
 
-        final List<String> command01 = Arrays.asList("terraform", "init", "-no-color");
+
+        ClassPathResource resource = new ClassPathResource("plugins");
+        String absolutePath = resource.getFile().getAbsolutePath();
+
+        final List<String> command01 = Arrays.asList("terraform", "init", "-no-color", "-plugin-dir=" + absolutePath);
         final List<String> command02 = Arrays.asList("terraform", "plan", "-no-color", "-out=./tfplan", "-json", "-var-file=./values.tfvars.json");
         final List<String> command03 = Arrays.asList("terraform", "show", "-no-color", "-json", "./tfplan");
 
