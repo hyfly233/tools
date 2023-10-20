@@ -27,7 +27,7 @@ dependencies {
     annotationProcessor("org.projectlombok:lombok")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     implementation("org.apache.commons:commons-lang3:3.12.0")
-    implementation("com.alibaba.fastjson2:fastjson2:2.0.14")
+    implementation("com.alibaba.fastjson2:fastjson2:2.0.41")
     implementation("cn.hutool:hutool-all:5.8.22")
     implementation("org.apache.commons:commons-exec:1.3")
 }

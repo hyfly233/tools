@@ -74,10 +74,10 @@ public class Change {
     // if there are values within it that won't be known until after
     // apply.
     @JSONField(name = "before")
-    private Map<String, Object> before;
+    private Object before;
 
     @JSONField(name = "after")
-    private Map<String, Object> after;
+    private Object after;
 
     // A deep object of booleans that denotes any values that are
     // unknown in a resource. These values were previously referred to
