@@ -1,8 +1,6 @@
 package com.example.demo;
 
 import cn.hutool.core.util.RuntimeUtil;
-import com.example.demo.client.TerraformClient;
-import com.example.demo.client.TerraformOptions;
 import com.example.demo.entity.message.ChangeSummary;
 import com.example.demo.processor.PlanJsonProcessor;
 import com.example.demo.processor.ProcessActuator;
@@ -25,35 +23,6 @@ class CommandTests {
 
     @Test
     void contextLoads() {
-    }
-
-    /**
-     * terraform plan -no-color -out=./tfplan -json -var-file=./values.tfvars.json && terraform show -no-color -json ./tfplan
-     *
-     * @throws Exception Exception
-     */
-    @Test
-    public void testPlanJson() throws Exception {
-        TerraformOptions options = new TerraformOptions();
-        try (TerraformClient terraformClient = new TerraformClient(options)) {
-
-            PlanJsonProcessor processor = new PlanJsonProcessor();
-            terraformClient.setOutputListener(processor::parsePlanJson);
-            terraformClient.setErrorListener(System.out::println);
-
-            File file = new File("./tmp");
-            terraformClient.setWorkingDirectory(file);
-
-            terraformClient.planJson().get();
-
-            System.out.println("processor.isSuccessful() -> " + processor.isSuccessful()); // false ??
-            System.out.println("processor.isCompleted() -> " + processor.isCompleted()); // false ??
-
-            String planJson = processor.getPlanJson();
-            System.out.println("planJson -> " + planJson); // null ??
-            ChangeSummary summary = processor.getChangeSummary();
-            System.out.println("summary -> " + summary.toString());
-        }
     }
 
     @Test
