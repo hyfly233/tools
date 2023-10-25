@@ -1,0 +1,10 @@
+spring:
+  datasource:
+    driver-class-name: org.sqlite.JDBC
+    url: jdbc:sqlite:./sqlite.db
+  sql:
+    init:
+      data-locations: classpath:data.sql
+
+mybatis-plus:
+  mapper-locations: classpath:mapper/*.xml
