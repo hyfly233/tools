@@ -20,7 +20,7 @@ public class TestServiceImpl extends ServiceImpl<TestMapper, TestEntity> impleme
     private ApplicationContext applicationContext;
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void func1() throws Exception {
         log.info("test02 -> thread: " + Thread.currentThread().getName());
         String id = IdUtil.simpleUUID();
@@ -38,9 +38,9 @@ public class TestServiceImpl extends ServiceImpl<TestMapper, TestEntity> impleme
         Thread.sleep(10000);
     }
 
-    @Async("asyncServiceExecutor")
+    @Async("myThreadPoolTaskExecutor")
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void func2(String id) {
         log.info("func1 -> thread: {}", Thread.currentThread().getName());
 
@@ -50,7 +50,7 @@ public class TestServiceImpl extends ServiceImpl<TestMapper, TestEntity> impleme
         entity.setHasErr(true);
         entity.setErrMsg("func1 -> errMsg");
 
-        if (this.updateById(entity)) {
+        if (this.saveOrUpdate(entity)) {
             log.info("func1 -> update success");
         } else {
             log.info("func1 -> update failed");
